@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, Calendar, Phone, User } from "lucide-react";
+import { Menu, Calendar, Phone, User, Bell, MapPin, Stethoscope } from "lucide-react";
+import { Badge } from "./ui/badge";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +14,13 @@ const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Book Appointment", href: "/book" },
     { name: "My Appointments", href: "/appointments" },
+    { name: "Live Map", href: "/map" },
+    { name: "Notifications", href: "/notifications" },
+    { name: "Profile", href: "/profile" },
+  ];
+
+  const doctorNavigation = [
+    { name: "Doctor Dashboard", href: "/doctor" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -30,7 +38,7 @@ const Navbar = () => {
           </Link>
 
           {/* Emergency Contact - Always Visible */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm">
               <Phone className="h-4 w-4 text-primary" />
               <span className="text-muted-foreground">Emergency:</span>
@@ -39,8 +47,8 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => (
+          <div className="hidden md:flex items-center space-x-4">
+            {navigation.slice(0, 4).map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
@@ -51,10 +59,36 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            <Button size="sm" className="medical-gradient">
-              <User className="h-4 w-4 mr-2" />
-              Login
-            </Button>
+            
+            {/* Notifications Icon */}
+            <Link to="/notifications" className="relative">
+              <Button variant="ghost" size="sm" className={isActive("/notifications") ? "text-primary" : ""}>
+                <Bell className="h-4 w-4" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground">
+                  3
+                </Badge>
+              </Button>
+            </Link>
+
+            {/* Profile */}
+            <Link to="/profile">
+              <Button variant="ghost" size="sm" className={isActive("/profile") ? "text-primary" : ""}>
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+            </Link>
+
+            {/* Doctor Access */}
+            <Link to="/doctor">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`${isActive("/doctor") ? "bg-primary text-primary-foreground" : ""}`}
+              >
+                <Stethoscope className="h-4 w-4 mr-2" />
+                Doctor
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Navigation */}
@@ -65,7 +99,7 @@ const Navbar = () => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px]">
+              <SheetContent side="right" className="w-[300px]">
                 <div className="flex flex-col space-y-4 mt-8">
                   <div className="flex items-center space-x-2 text-sm p-4 bg-muted rounded-lg">
                     <Phone className="h-4 w-4 text-primary" />
@@ -80,17 +114,43 @@ const Navbar = () => {
                       key={item.name}
                       to={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`text-base font-medium transition-colors hover:text-primary p-2 rounded-md ${
+                      className={`text-base font-medium transition-colors hover:text-primary p-3 rounded-md flex items-center ${
                         isActive(item.href) ? "text-primary bg-primary/10" : "text-muted-foreground"
                       }`}
                     >
+                      {item.name === "Book Appointment" && <Calendar className="h-4 w-4 mr-2" />}
+                      {item.name === "My Appointments" && <Calendar className="h-4 w-4 mr-2" />}
+                      {item.name === "Live Map" && <MapPin className="h-4 w-4 mr-2" />}
+                      {item.name === "Notifications" && (
+                        <>
+                          <Bell className="h-4 w-4 mr-2" />
+                          <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 text-xs">3</Badge>
+                        </>
+                      )}
+                      {item.name === "Profile" && <User className="h-4 w-4 mr-2" />}
                       {item.name}
                     </Link>
                   ))}
+
+                  <div className="border-t pt-4">
+                    {doctorNavigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className={`text-base font-medium transition-colors hover:text-primary p-3 rounded-md flex items-center ${
+                          isActive(item.href) ? "text-primary bg-primary/10" : "text-muted-foreground"
+                        }`}
+                      >
+                        <Stethoscope className="h-4 w-4 mr-2" />
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                   
                   <Button className="medical-gradient mt-4">
                     <User className="h-4 w-4 mr-2" />
-                    Login
+                    Login / Sign Up
                   </Button>
                 </div>
               </SheetContent>

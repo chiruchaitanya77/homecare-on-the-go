@@ -1,62 +1,59 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon, MapPin, Clock, Phone, Star, MoreVertical } from "lucide-react";
+import { CalendarIcon, MapPin, Clock, Phone, Star, MoreVertical, Navigation, CreditCard, FileText, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const AppointmentsDashboard = () => {
-  // Sample data - in real app this would come from API
   const [appointments] = useState([
     {
       id: 1,
       date: "2024-06-08",
       time: "10:00 AM",
       service: "General Consultation",
-      price: "₹999",
+      price: 999,
       status: "confirmed",
+      paymentStatus: "paid",
       address: "123 Marine Drive, Mumbai 400001",
+      landmark: "Near Gateway of India",
       doctor: "Dr. Sarah Johnson",
-      notes: "Regular checkup and blood pressure monitoring"
+      notes: "Regular checkup and blood pressure monitoring",
+      coordinates: { lat: 18.9220, lng: 72.8347 }
     },
     {
       id: 2,
       date: "2024-06-15",
       time: "2:00 PM",
       service: "Health Monitoring",
-      price: "₹1,199",
+      price: 1199,
       status: "pending",
+      paymentStatus: "pending",
       address: "456 Linking Road, Bandra, Mumbai 400050",
+      landmark: "Near Bandra Station",
       doctor: "Dr. Sarah Johnson",
-      notes: "Follow-up for diabetes management"
+      notes: "Follow-up for diabetes management",
+      coordinates: { lat: 19.0544, lng: 72.8406 }
     },
     {
       id: 3,
       date: "2024-05-28",
       time: "11:00 AM",
       service: "General Consultation",
-      price: "₹999",
+      price: 999,
       status: "completed",
+      paymentStatus: "paid",
       address: "789 Carter Road, Bandra, Mumbai 400050",
+      landmark: "Near Promenade",
       doctor: "Dr. Sarah Johnson",
       notes: "Completed successfully",
-      rating: 5
-    },
-    {
-      id: 4,
-      date: "2024-05-15",
-      time: "4:00 PM",
-      service: "Elderly Care",
-      price: "₹1,499",
-      status: "completed",
-      address: "321 Juhu Beach Road, Mumbai 400049",
-      doctor: "Dr. Sarah Johnson",
-      notes: "Mobility assessment completed",
-      rating: 5
+      rating: 5,
+      prescription: "Paracetamol 500mg twice daily"
     }
   ]);
 
@@ -75,6 +72,19 @@ const AppointmentsDashboard = () => {
     }
   };
 
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
   const upcomingAppointments = appointments.filter(apt => 
     new Date(apt.date) >= new Date() && apt.status !== "cancelled"
   );
@@ -82,6 +92,11 @@ const AppointmentsDashboard = () => {
   const pastAppointments = appointments.filter(apt => 
     new Date(apt.date) < new Date() || apt.status === "completed"
   );
+
+  const handleCopyCoordinates = (coordinates: { lat: number; lng: number }) => {
+    const coordString = `${coordinates.lat}, ${coordinates.lng}`;
+    navigator.clipboard.writeText(coordString);
+  };
 
   const AppointmentCard = ({ appointment, isPast = false }: { appointment: any, isPast?: boolean }) => (
     <Card className="hover:shadow-md transition-shadow">
@@ -109,6 +124,9 @@ const AppointmentsDashboard = () => {
             <Badge className={getStatusColor(appointment.status)}>
               {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
             </Badge>
+            <Badge className={getPaymentStatusColor(appointment.paymentStatus)}>
+              {appointment.paymentStatus}
+            </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -124,6 +142,7 @@ const AppointmentsDashboard = () => {
                 )}
                 <DropdownMenuItem>View Details</DropdownMenuItem>
                 {isPast && <DropdownMenuItem>Book Again</DropdownMenuItem>}
+                <DropdownMenuItem>Download Invoice</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -132,7 +151,22 @@ const AppointmentsDashboard = () => {
       <CardContent className="space-y-4">
         <div className="flex items-start space-x-2">
           <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-          <span className="text-sm text-muted-foreground">{appointment.address}</span>
+          <div className="flex-1">
+            <div className="text-sm text-muted-foreground">{appointment.address}</div>
+            {appointment.landmark && (
+              <div className="text-xs text-muted-foreground">Near: {appointment.landmark}</div>
+            )}
+            {appointment.coordinates && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                onClick={() => handleCopyCoordinates(appointment.coordinates)}
+              >
+                Copy Coordinates
+              </Button>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center justify-between">
@@ -142,12 +176,20 @@ const AppointmentsDashboard = () => {
             </div>
             <span className="text-sm font-medium">{appointment.doctor}</span>
           </div>
-          <span className="font-bold text-primary">{appointment.price}</span>
+          <span className="font-bold text-primary">₹{appointment.price}</span>
         </div>
 
         {appointment.notes && (
           <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+            <FileText className="h-4 w-4 inline mr-1" />
             {appointment.notes}
+          </p>
+        )}
+
+        {appointment.prescription && (
+          <p className="text-sm text-accent-foreground bg-accent/10 p-3 rounded-lg border border-accent/20">
+            <span className="font-medium">Prescription: </span>
+            {appointment.prescription}
           </p>
         )}
 
@@ -163,14 +205,35 @@ const AppointmentsDashboard = () => {
         )}
 
         {!isPast && (
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" className="flex-1">
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm">
               <Phone className="h-4 w-4 mr-2" />
               Call Doctor
             </Button>
-            <Button variant="outline" size="sm" className="flex-1">
-              <MapPin className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm">
+              <Navigation className="h-4 w-4 mr-2" />
               Track Visit
+            </Button>
+            <Button variant="outline" size="sm">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Chat
+            </Button>
+            <Button variant="outline" size="sm">
+              <MapPin className="h-4 w-4 mr-2" />
+              View Map
+            </Button>
+          </div>
+        )}
+
+        {isPast && (
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm">
+              <CreditCard className="h-4 w-4 mr-2" />
+              View Invoice
+            </Button>
+            <Button variant="outline" size="sm">
+              <Star className="h-4 w-4 mr-2" />
+              Rate Visit
             </Button>
           </div>
         )}
@@ -178,12 +241,15 @@ const AppointmentsDashboard = () => {
     </Card>
   );
 
+  const totalSpent = appointments.reduce((sum, apt) => sum + apt.price, 0);
+  const completedVisits = appointments.filter(apt => apt.status === "completed").length;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
             My Appointments
           </h1>
@@ -193,7 +259,7 @@ const AppointmentsDashboard = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="text-center p-6">
               <div className="text-3xl font-bold text-primary mb-2">{upcomingAppointments.length}</div>
@@ -202,14 +268,47 @@ const AppointmentsDashboard = () => {
           </Card>
           <Card>
             <CardContent className="text-center p-6">
-              <div className="text-3xl font-bold text-accent mb-2">{pastAppointments.length}</div>
+              <div className="text-3xl font-bold text-accent mb-2">{completedVisits}</div>
               <div className="text-muted-foreground">Completed Visits</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="text-center p-6">
-              <div className="text-3xl font-bold text-foreground mb-2">₹{appointments.reduce((sum, apt) => sum + parseInt(apt.price.replace('₹', '').replace(',', '')), 0).toLocaleString()}</div>
+              <div className="text-3xl font-bold text-foreground mb-2">₹{totalSpent.toLocaleString()}</div>
               <div className="text-muted-foreground">Total Spent</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="text-center p-6">
+              <div className="text-3xl font-bold text-medical-green mb-2">4.8</div>
+              <div className="text-muted-foreground">Avg Rating</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
+          <Link to="/book">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="text-center p-6">
+                <CalendarIcon className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-medium">Book New Appointment</div>
+                <div className="text-sm text-muted-foreground">Schedule your next visit</div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="text-center p-6">
+              <Phone className="h-8 w-8 mx-auto text-accent mb-2" />
+              <div className="font-medium">Emergency Call</div>
+              <div className="text-sm text-muted-foreground">24/7 emergency support</div>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="text-center p-6">
+              <FileText className="h-8 w-8 mx-auto text-medical-green mb-2" />
+              <div className="font-medium">Health Records</div>
+              <div className="text-sm text-muted-foreground">View your medical history</div>
             </CardContent>
           </Card>
         </div>
@@ -217,8 +316,8 @@ const AppointmentsDashboard = () => {
         {/* Appointments Tabs */}
         <Tabs defaultValue="upcoming" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
-            <TabsTrigger value="history">Visit History</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming Appointments ({upcomingAppointments.length})</TabsTrigger>
+            <TabsTrigger value="history">Visit History ({pastAppointments.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-6">
@@ -236,9 +335,11 @@ const AppointmentsDashboard = () => {
                   <p className="text-muted-foreground mb-6">
                     Ready to schedule your next home visit with Dr. Sarah?
                   </p>
-                  <Button className="medical-gradient">
-                    Book New Appointment
-                  </Button>
+                  <Link to="/book">
+                    <Button className="medical-gradient">
+                      Book New Appointment
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             )}
