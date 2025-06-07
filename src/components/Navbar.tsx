@@ -3,14 +3,17 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, Calendar, Phone, User, Bell, MapPin, Stethoscope } from "lucide-react";
+import { Switch } from "./ui/switch";
+import { Menu, Calendar, Phone, User, Bell, MapPin, Stethoscope, Sun, Moon } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { useTheme } from "next-themes";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
-  const navigation = [
+  const clientNavigation = [
     { name: "Home", href: "/" },
     { name: "Book Appointment", href: "/book" },
     { name: "My Appointments", href: "/appointments" },
@@ -20,10 +23,18 @@ const Navbar = () => {
   ];
 
   const doctorNavigation = [
-    { name: "Doctor Dashboard", href: "/doctor" },
+    { name: "Dashboard", href: "/doctor" },
+    { name: "Appointments", href: "/doctor/appointments" },
+    { name: "Map & Route", href: "/doctor/map" },
+    { name: "History", href: "/doctor/history" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
+  const isDoctorPage = location.pathname.startsWith('/doctor');
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <nav className="bg-card/95 backdrop-blur-md border-b border-border sticky top-0 z-50">
@@ -48,17 +59,39 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            {navigation.slice(0, 4).map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive(item.href) ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {/* Theme Toggle */}
+            <div className="flex items-center space-x-2">
+              <Sun className="h-4 w-4" />
+              <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
+              <Moon className="h-4 w-4" />
+            </div>
+
+            {/* Navigation based on current page type */}
+            {isDoctorPage ? (
+              doctorNavigation.slice(0, 3).map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))
+            ) : (
+              clientNavigation.slice(0, 4).map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))
+            )}
             
             {/* Notifications Icon */}
             <Link to="/notifications" className="relative">
@@ -71,22 +104,21 @@ const Navbar = () => {
             </Link>
 
             {/* Profile */}
-            <Link to="/profile">
-              <Button variant="ghost" size="sm" className={isActive("/profile") ? "text-primary" : ""}>
+            <Link to={isDoctorPage ? "/doctor" : "/profile"}>
+              <Button variant="ghost" size="sm" className={isActive(isDoctorPage ? "/doctor" : "/profile") ? "text-primary" : ""}>
                 <User className="h-4 w-4 mr-2" />
-                Profile
+                {isDoctorPage ? "Doctor" : "Profile"}
               </Button>
             </Link>
 
-            {/* Doctor Access */}
-            <Link to="/doctor">
+            {/* Role Switch */}
+            <Link to={isDoctorPage ? "/" : "/doctor"}>
               <Button 
                 variant="outline" 
-                size="sm" 
-                className={`${isActive("/doctor") ? "bg-primary text-primary-foreground" : ""}`}
+                size="sm"
               >
                 <Stethoscope className="h-4 w-4 mr-2" />
-                Doctor
+                {isDoctorPage ? "Client View" : "Doctor View"}
               </Button>
             </Link>
           </div>
@@ -101,6 +133,16 @@ const Navbar = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px]">
                 <div className="flex flex-col space-y-4 mt-8">
+                  {/* Theme Toggle */}
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Dark Mode</span>
+                    <div className="flex items-center space-x-2">
+                      <Sun className="h-4 w-4" />
+                      <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
+                      <Moon className="h-4 w-4" />
+                    </div>
+                  </div>
+
                   <div className="flex items-center space-x-2 text-sm p-4 bg-muted rounded-lg">
                     <Phone className="h-4 w-4 text-primary" />
                     <div>
@@ -109,7 +151,7 @@ const Navbar = () => {
                     </div>
                   </div>
                   
-                  {navigation.map((item) => (
+                  {(isDoctorPage ? doctorNavigation : clientNavigation).map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
@@ -121,31 +163,27 @@ const Navbar = () => {
                       {item.name === "Book Appointment" && <Calendar className="h-4 w-4 mr-2" />}
                       {item.name === "My Appointments" && <Calendar className="h-4 w-4 mr-2" />}
                       {item.name === "Live Map" && <MapPin className="h-4 w-4 mr-2" />}
+                      {item.name === "Map & Route" && <MapPin className="h-4 w-4 mr-2" />}
                       {item.name === "Notifications" && (
                         <>
                           <Bell className="h-4 w-4 mr-2" />
                           <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 text-xs">3</Badge>
                         </>
                       )}
-                      {item.name === "Profile" && <User className="h-4 w-4 mr-2" />}
+                      {(item.name === "Profile" || item.name === "Dashboard") && <User className="h-4 w-4 mr-2" />}
                       {item.name}
                     </Link>
                   ))}
 
                   <div className="border-t pt-4">
-                    {doctorNavigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setIsOpen(false)}
-                        className={`text-base font-medium transition-colors hover:text-primary p-3 rounded-md flex items-center ${
-                          isActive(item.href) ? "text-primary bg-primary/10" : "text-muted-foreground"
-                        }`}
-                      >
-                        <Stethoscope className="h-4 w-4 mr-2" />
-                        {item.name}
-                      </Link>
-                    ))}
+                    <Link
+                      to={isDoctorPage ? "/" : "/doctor"}
+                      onClick={() => setIsOpen(false)}
+                      className="text-base font-medium transition-colors hover:text-primary p-3 rounded-md flex items-center text-muted-foreground"
+                    >
+                      <Stethoscope className="h-4 w-4 mr-2" />
+                      {isDoctorPage ? "Switch to Client View" : "Switch to Doctor View"}
+                    </Link>
                   </div>
                   
                   <Button className="medical-gradient mt-4">
